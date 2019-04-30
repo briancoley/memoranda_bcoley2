@@ -60,11 +60,7 @@ public class NoteListImpl implements INoteList {
                 Vector ds = m.getDays();
                 for (int di = 0; di < ds.size(); di++) {
                     Day d = (Day) ds.get(di);
-					Vector ns = d.getNotes();
-					for(int ni = 0; ni < ns.size(); ni++) {
-						NoteElement n = (NoteElement) ns.get(ni);
-						v.add(new NoteImpl(n.getElement(), _project));
-					}
+					getNotesForPeriodFilterDay(v, d);
                 }
             }
         }
@@ -96,36 +92,57 @@ public class NoteListImpl implements INoteList {
     }
 	        return v;
 	}
-
+    
+    // TASK 3-1 SMELL WITHIN A CLASS
+    // Below
     public Collection getNotesForPeriod(CalendarDate startDate, CalendarDate endDate) {
         Vector v = new Vector();
         Elements yrs = _root.getChildElements("year");
         for (int yi = 0; yi < yrs.size(); yi++) {
-            Year y = new Year(yrs.get(yi));
-            if ((y.getValue() >= startDate.getYear()) && (y.getValue() <= endDate.getYear())) {
-                Vector months = y.getMonths();
-                for (int mi = 0; mi < months.size(); mi++) {
-                    Month m = (Month) months.get(mi);
-                    if (!((y.getValue() == startDate.getYear()) && (m.getValue() < startDate.getMonth()))
-                        || !((y.getValue() == endDate.getYear()) && (m.getValue() > endDate.getMonth()))) {
-                        Vector days = m.getDays();
-                        for (int di = 0; di < days.size(); di++) {
-                            Day d = (Day) days.get(di);
-                            if (!((m.getValue() == startDate.getMonth()) && (d.getValue() < startDate.getDay()))
-							|| !((m.getValue() == endDate.getMonth()) && (d.getValue() > endDate.getDay()))) {
-								Vector ns = d.getNotes();
-								for(int ni = 0; ni < ns.size(); ni++) {
-									NoteElement n = (NoteElement) ns.get(ni);
-									v.add(new NoteImpl(n.getElement(), _project));
-								}
-							}
-                        }
-                    }
-                }
-            }
+            getNotesForPeriodProcessThroughYears(startDate, endDate, v, yrs, yi);
         }
         return v;
     }
+
+    private void getNotesForPeriodProcessThroughYears(CalendarDate startDate, CalendarDate endDate, Vector v,
+            Elements yrs, int yi) {
+        Year y = new Year(yrs.get(yi));
+        if ((y.getValue() >= startDate.getYear()) && (y.getValue() <= endDate.getYear())) {
+            getNotesForPeriodFilterBetweenDates(startDate, endDate, v, y);
+        }
+    }
+
+    private void getNotesForPeriodFilterBetweenDates(CalendarDate startDate, CalendarDate endDate, Vector v, Year y) {
+        Vector months = y.getMonths();
+        for (int mi = 0; mi < months.size(); mi++) {
+            Month m = (Month) months.get(mi);
+            if (!((y.getValue() == startDate.getYear()) && (m.getValue() < startDate.getMonth()))
+                || !((y.getValue() == endDate.getYear()) && (m.getValue() > endDate.getMonth()))) {
+                getNotesForPeriodFilterMonth(startDate, endDate, v, m);
+            }
+        }
+    }
+
+    private void getNotesForPeriodFilterMonth(CalendarDate startDate, CalendarDate endDate, Vector v, Month m) {
+        Vector days = m.getDays();
+        for (int di = 0; di < days.size(); di++) {
+            Day d = (Day) days.get(di);
+            if (!((m.getValue() == startDate.getMonth()) && (d.getValue() < startDate.getDay()))
+        	|| !((m.getValue() == endDate.getMonth()) && (d.getValue() > endDate.getDay()))) {
+        		getNotesForPeriodFilterDay(v, d);
+        	}
+        }
+    }
+
+    private void getNotesForPeriodFilterDay(Vector v, Day d) {
+        Vector ns = d.getNotes();
+        for(int ni = 0; ni < ns.size(); ni++) {
+        	NoteElement n = (NoteElement) ns.get(ni);
+        	v.add(new NoteImpl(n.getElement(), _project));
+        }
+    }
+    // Above
+    // TASK 3-1 SMELL WITHIN A CLASS
 
 	/**
 	 * returns the first note for a date.
