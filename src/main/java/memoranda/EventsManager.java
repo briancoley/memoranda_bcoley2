@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import main.java.memoranda.date.CalendarDate;
+import main.java.memoranda.interfaces.IEvent;
 import main.java.memoranda.util.CurrentStorage;
 import main.java.memoranda.util.Util;
 
@@ -112,7 +113,7 @@ public class EventsManager {
 		return v;
 	}
 
-	public static Event createEvent(
+	public static IEvent createEvent(
 		CalendarDate date,
 		int hh,
 		int mm,
@@ -129,7 +130,7 @@ public class EventsManager {
 		return new EventImpl(el);
 	}
 
-	public static Event createRepeatableEvent(
+	public static IEvent createRepeatableEvent(
 		int type,
 		CalendarDate startDate,
 		CalendarDate endDate,
@@ -174,7 +175,7 @@ public class EventsManager {
 		Vector reps = (Vector) getRepeatableEvents();
 		Vector v = new Vector();
 		for (int i = 0; i < reps.size(); i++) {
-			Event ev = (Event) reps.get(i);
+			IEvent ev = (IEvent) reps.get(i);
 			
 			// --- ivanrise
 			// ignore this event if it's a 'only working days' event and today is weekend.
@@ -190,41 +191,57 @@ public class EventsManager {
 			// ev.getEndDate()));
 			if (date.inPeriod(ev.getStartDate(), ev.getEndDate())) {
 				if (ev.getRepeat() == REPEAT_DAILY) {
-					int n = date.getCalendar().get(Calendar.DAY_OF_YEAR);
-					int ns =
-						ev.getStartDate().getCalendar().get(
-							Calendar.DAY_OF_YEAR);
-					//System.out.println((n - ns) % ev.getPeriod());
-					if ((n - ns) % ev.getPeriod() == 0)
-						v.add(ev);
+					reduceComplexity1(date, v, ev);
 				} else if (ev.getRepeat() == REPEAT_WEEKLY) {
-					if (date.getCalendar().get(Calendar.DAY_OF_WEEK)
-						== ev.getPeriod())
-						v.add(ev);
+					reduceComplexity2(date, v, ev);
 				} else if (ev.getRepeat() == REPEAT_MONTHLY) {
-					if (date.getCalendar().get(Calendar.DAY_OF_MONTH)
-						== ev.getPeriod())
-						v.add(ev);
+					reduceComplexity3(date, v, ev);
 				} else if (ev.getRepeat() == REPEAT_YEARLY) {
-					int period = ev.getPeriod();
-					//System.out.println(date.getCalendar().get(Calendar.DAY_OF_YEAR));
-					if ((date.getYear() % 4) == 0
-						&& date.getCalendar().get(Calendar.DAY_OF_YEAR) > 60)
-						period++;
-
-					if (date.getCalendar().get(Calendar.DAY_OF_YEAR) == period)
-						v.add(ev);
+					reduceComplexity4(date, v, ev);
 				}
 			}
 		}
 		return v;
 	}
 
+    private static void reduceComplexity4(CalendarDate date, Vector v, IEvent ev) {
+        int period = ev.getPeriod();
+        //System.out.println(date.getCalendar().get(Calendar.DAY_OF_YEAR));
+        if ((date.getYear() % 4) == 0
+        	&& date.getCalendar().get(Calendar.DAY_OF_YEAR) > 60)
+        	period++;
+
+        if (date.getCalendar().get(Calendar.DAY_OF_YEAR) == period)
+        	v.add(ev);
+    }
+
+    private static void reduceComplexity3(CalendarDate date, Vector v, IEvent ev) {
+        if (date.getCalendar().get(Calendar.DAY_OF_MONTH)
+        	== ev.getPeriod())
+        	v.add(ev);
+    }
+
+    private static void reduceComplexity2(CalendarDate date, Vector v, IEvent ev) {
+        if (date.getCalendar().get(Calendar.DAY_OF_WEEK)
+        	== ev.getPeriod())
+        	v.add(ev);
+    }
+
+    private static void reduceComplexity1(CalendarDate date, Vector v, IEvent ev) {
+        int n = date.getCalendar().get(Calendar.DAY_OF_YEAR);
+        int ns =
+        	ev.getStartDate().getCalendar().get(
+        		Calendar.DAY_OF_YEAR);
+        //System.out.println((n - ns) % ev.getPeriod());
+        if ((n - ns) % ev.getPeriod() == 0)
+        	v.add(ev);
+    }
+
 	public static Collection getActiveEvents() {
 		return getEventsForDate(CalendarDate.today());
 	}
 
-	public static Event getEvent(CalendarDate date, int hh, int mm) {
+	public static IEvent getEvent(CalendarDate date, int hh, int mm) {
 		Day d = getDay(date);
 		if (d == null)
 			return null;
@@ -246,7 +263,7 @@ public class EventsManager {
 			d.getElement().removeChild(getEvent(date, hh, mm).getContent());
 	}
 
-	public static void removeEvent(Event ev) {
+	public static void removeEvent(IEvent ev) {
 		ParentNode parent = ev.getContent().getParent();
 		parent.removeChild(ev.getContent());
 	}
