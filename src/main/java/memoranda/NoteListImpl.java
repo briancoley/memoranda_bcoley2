@@ -25,10 +25,10 @@ import nu.xom.Elements;
  */
 /*$Id: NoteListImpl.java,v 1.14 2004/10/28 11:30:15 alexeya Exp $*/
 public class NoteListImpl implements INoteList {
-
-    private IProject _project = null;
-    private Document _doc = null;
-    private Element _root = null;
+    // TASK 3-2 SMELL BETWEEN CLASSES
+    private NoteListImplDate data = new NoteListImplDate(null, null, null);
+    // TASK 3-2 SMELL BETWEEN CLASSES
+    
 
 //    public static final String NS_JNNL = "http://www.openmechanics.org/2003/jnotes-noteslist";
 
@@ -36,22 +36,22 @@ public class NoteListImpl implements INoteList {
      * Constructor for NoteListImpl.
      */
     public NoteListImpl(Document doc, IProject prj) {
-        _doc = doc;
-        _root = _doc.getRootElement();
-        _project = prj;
+        data._doc = doc;
+        data._root = data._doc.getRootElement();
+        data._project = prj;
     }
 
     public NoteListImpl(IProject prj) {
     	
         //_root = new Element("noteslist", NS_JNNL);
-        _root = new Element("noteslist");
-        _doc = new Document(_root);
-        _project = prj;    
+        data._root = new Element("noteslist");
+        data._doc = new Document(data._root);
+        data._project = prj;    
     }
 
     public Collection getAllNotes() {
         Vector v = new Vector();
-        Elements yrs = _root.getChildElements("year");
+        Elements yrs = data._root.getChildElements("year");
         for (int yi = 0; yi < yrs.size(); yi++) {
             Year y = new Year(yrs.get(yi));
             Vector ms = y.getMonths();
@@ -72,7 +72,7 @@ public class NoteListImpl implements INoteList {
      */
     public Collection getMarkedNotes() {
         Vector v = new Vector();
-        Elements yrs = _root.getChildElements("year");
+        Elements yrs = data._root.getChildElements("year");
         for (int yi = 0; yi < yrs.size(); yi++) {
             Year y = new Year(yrs.get(yi));
             Vector ms = y.getMonths();
@@ -84,7 +84,7 @@ public class NoteListImpl implements INoteList {
 					Vector ns = d.getNotes();
 					for(int ni = 0; ni < ns.size(); ni++) {
 						NoteElement ne = (NoteElement) ns.get(ni);
-						INote n = new NoteImpl(ne.getElement(), _project);
+						INote n = new NoteImpl(ne.getElement(), data._project);
 						if (n.isMarked()) v.add(n);
                 }
             }
@@ -97,7 +97,7 @@ public class NoteListImpl implements INoteList {
     // Below
     public Collection getNotesForPeriod(CalendarDate startDate, CalendarDate endDate) {
         Vector v = new Vector();
-        Elements yrs = _root.getChildElements("year");
+        Elements yrs = data._root.getChildElements("year");
         for (int yi = 0; yi < yrs.size(); yi++) {
             getNotesForPeriodProcessThroughYears(startDate, endDate, v, yrs, yi);
         }
@@ -138,7 +138,7 @@ public class NoteListImpl implements INoteList {
         Vector ns = d.getNotes();
         for(int ni = 0; ni < ns.size(); ni++) {
         	NoteElement n = (NoteElement) ns.get(ni);
-        	v.add(new NoteImpl(n.getElement(), _project));
+        	v.add(new NoteImpl(n.getElement(), data._project));
         }
     }
     // Above
@@ -157,7 +157,7 @@ public class NoteListImpl implements INoteList {
 		Vector ns = d.getNotes();
 		if(ns.size()>0) {
 			NoteElement n = (NoteElement) ns.get(0);
-			INote currentNote = new NoteImpl(n.getElement(), _project);
+			INote currentNote = new NoteImpl(n.getElement(), data._project);
 			return currentNote; 
 		}
 		return null;
@@ -175,7 +175,7 @@ public class NoteListImpl implements INoteList {
         if (d == null) 
             d = m.createDay(date.getDay());
 		NoteElement ne = d.createNote(Util.generateId());
-        return new NoteImpl(ne.getElement(), _project);
+        return new NoteImpl(ne.getElement(), data._project);
     }
     
      /*
@@ -206,7 +206,7 @@ public class NoteListImpl implements INoteList {
     }
 
     private Year getYear(int y) {
-        Elements yrs = _root.getChildElements("year");
+        Elements yrs = data._root.getChildElements("year");
         String yy = new Integer(y).toString();
         for (int i = 0; i < yrs.size(); i++)
             if (yrs.get(i).getAttribute("year").getValue().equals(yy))
@@ -218,7 +218,7 @@ public class NoteListImpl implements INoteList {
     private Year createYear(int y) {
         Element el = new Element("year");
         el.addAttribute(new Attribute("year", new Integer(y).toString()));
-        _root.appendChild(el);
+        data._root.appendChild(el);
         return new Year(el);
     }
 /*
@@ -434,7 +434,7 @@ public class NoteListImpl implements INoteList {
      * @see main.java.memoranda.interfaces.INoteList#getXMLContent()
      */
     public Document getXMLContent() {
-        return _doc;
+        return data._doc;
     }
    
     
